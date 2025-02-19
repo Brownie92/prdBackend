@@ -1,0 +1,8 @@
+# Node.js modules
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Environment variables (bevat gevoelige info zoals DB-wachtwoorden)
+.env
