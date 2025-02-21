@@ -10,7 +10,7 @@ import { initSocket, sendRaceCreated, sendRaceUpdate, sendRoundUpdate, sendWinne
 // **Initialize Express + HTTP server**
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 6001;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/dapp";
 
 // **Middleware: CORS & JSON parsing**
@@ -28,11 +28,10 @@ mongoose
 
 // **Initialize WebSocket & store reference**
 const io = initSocket(server);
-
 if (!io) {
-  console.error("[ERROR] ❌ WebSocket initialization failed!");
+    console.error("[ERROR] ❌ WebSocket initialization failed!");
 } else {
-  console.log("[INFO] 🔄 WebSocket successfully initialized!");
+    console.log("[INFO] 🔄 WebSocket successfully initialized!");
 }
 
 // **Import API routes**
@@ -63,8 +62,8 @@ app.use((err, req, res, next) => {
 import "./schedulers/roundScheduler.js";
 
 // **Start the server**
-server.listen(PORT, () => {
-  console.log(`[INFO] 🚀 Server is running on http://localhost:${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`[INFO] 🚀 Server is running on http://0.0.0.0:${PORT}`);
 });
 
 // **Export WebSocket events**
