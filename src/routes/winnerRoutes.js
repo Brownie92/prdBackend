@@ -1,7 +1,20 @@
 import express from "express";
-import { saveWinner, getWinnerByRaceId } from "../controllers/winnerController.js";
+import { saveWinner, getWinnerByRaceId, getLatestWinner } from "../controllers/winnerController.js";
 
 const router = express.Router();
+
+// ✅ Retrieve the latest winner
+router.get("/latest", async (req, res) => {
+    try {
+        const winner = await getLatestWinner();
+        if (!winner) {
+            return res.status(404).json({ error: "No winner found" });
+        }
+        res.status(200).json(winner);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch latest winner" });
+    }
+});
 
 // ✅ Retrieve the winner for a specific race
 router.get("/:raceId", async (req, res) => {

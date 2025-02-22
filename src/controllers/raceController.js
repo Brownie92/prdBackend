@@ -3,13 +3,13 @@ import * as raceService from "../services/raceService.js";
 import { sendRaceCreated, sendRaceUpdate } from "../socket.js"; // ✅ WebSockets via socket.js
 
 /**
- * Starts a new race
+ * ✅ Start een nieuwe race
  */
 export const startRace = async (req, res) => {
     try {
         const race = await raceService.createRace();
 
-        // ✅ WebSocket: Notify frontend about the new race
+        // ✅ WebSocket: Stuur race event naar frontend
         sendRaceCreated(race);
 
         res.status(201).json({ message: "Race created successfully", race });
@@ -19,7 +19,7 @@ export const startRace = async (req, res) => {
 };
 
 /**
- * Retrieves all races
+ * ✅ Haal alle races op
  */
 export const getAllRaces = async (req, res) => {
     try {
@@ -31,7 +31,7 @@ export const getAllRaces = async (req, res) => {
 };
 
 /**
- * Retrieves a specific race by ID
+ * ✅ Haal een specifieke race op via ID
  */
 export const getRace = async (req, res) => {
     try {
@@ -45,7 +45,29 @@ export const getRace = async (req, res) => {
 };
 
 /**
- * Updates the status of a race
+ * ✅ Haal de meest recente actieve race op
+ */
+export const getCurrentRace = async (req, res) => {
+    try {
+        const latestRace = await Race.findOne({ status: "active" }).sort({ createdAt: -1 });
+
+        if (!latestRace) {
+            return res.status(404).json({ message: "No active race found" });
+        }
+
+        res.status(200).json({
+            raceId: latestRace._id,
+            memes: latestRace.memes,
+            currentRound: latestRace.currentRound, // 🔥 Zorg dat dit altijd correct is
+            roundEndTime: latestRace.roundEndTime,
+            status: latestRace.status,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch current race", error: error.message });
+    }
+};
+/**
+ * ✅ Update de status van een race
  */
 export const updateRaceStatus = async (req, res) => {
     try {
@@ -53,7 +75,7 @@ export const updateRaceStatus = async (req, res) => {
         const race = await raceService.updateRaceStatus(req.params.raceId, status);
         if (!race) return res.status(404).json({ message: "Race not found" });
 
-        // ✅ WebSocket: Notify frontend about race status update
+        // ✅ WebSocket: Stuur race update event
         sendRaceUpdate(race);
 
         res.status(200).json({ message: "Race status updated successfully", race });

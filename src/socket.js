@@ -30,7 +30,7 @@ export const initSocket = (server) => {
             console.error(`[WS] ❌ WebSocket error:`, error);
         });
 
-        ws.send("✅ Connection established!"); // ✅ Stuur een welkomsbericht
+        ws.send(JSON.stringify({ event: "connection", data: "Connection established!" }));
     });
 
     return wss;

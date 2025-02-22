@@ -72,3 +72,27 @@ export const getWinnerByRaceId = async (raceId) => {
         throw error;
     }
 };
+
+/**
+ * ✅ Retrieve the latest winner.
+ */
+export const getLatestWinner = async () => {
+    try {
+        // ✅ Fetch the most recent winner and populate meme details
+        const latestWinner = await Winner.findOne().sort({ createdAt: -1 }).populate("memeId");
+
+        if (!latestWinner) {
+            return null;
+        }
+
+        return {
+            name: latestWinner.memeId.name,
+            image: latestWinner.memeId.url,
+            totalVault: latestWinner.totalVault || 0,
+            totalWinners: await Winner.countDocuments(),
+        };
+    } catch (error) {
+        console.error(`[ERROR] Failed to fetch latest winner:`, error);
+        throw error;
+    }
+};

@@ -1,18 +1,21 @@
 import express from "express";
-import { startRace, getRace, getAllRaces, updateRaceStatus } from "../controllers/raceController.js";
+import { startRace, getRace, getAllRaces, updateRaceStatus, getCurrentRace } from "../controllers/raceController.js";
 
 const router = express.Router();
 
-// ✅ Start a new race
+// ✅ Route om de huidige race op te halen
+router.get("/current", getCurrentRace);
+
+// ✅ Start een nieuwe race
 router.post("/", startRace);
 
-// ✅ Retrieve all races
+// ✅ Haal alle races op
 router.get("/", getAllRaces);
 
-// ✅ Retrieve a specific race by ID
+// ✅ Haal een specifieke race op
 router.get("/:raceId", getRace);
 
-// ✅ Update the status of a race
+// ✅ Update de status van een race
 router.patch("/:raceId/status", updateRaceStatus);
 
 export default router;
