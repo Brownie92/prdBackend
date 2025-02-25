@@ -40,12 +40,14 @@ import raceRoutes from "./routes/raceRoutes.js";
 import roundRoutes from "./routes/roundRoutes.js";
 import participantRoutes from "./routes/participantRoutes.js";
 import winnerRoutes from "./routes/winnerRoutes.js";
+import boostRoutes from "./routes/boostRoutes.js";
 
 app.use("/api/memes", memeRoutes);
 app.use("/api/races", raceRoutes);
 app.use("/api/rounds", roundRoutes);
 app.use("/api/participants", participantRoutes);
 app.use("/api/winners", winnerRoutes);
+app.use("/api/boosts", boostRoutes);
 
 // **Fallback route for 404 errors**
 app.use((req, res) => {

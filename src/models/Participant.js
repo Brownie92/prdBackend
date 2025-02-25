@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 
 const participantSchema = new mongoose.Schema({
-    raceId: { type: String, required: true, index: true }, // ✅ Race the participant is competing in
-    walletAddress: { type: String, required: true, index: true }, // ✅ Participant's wallet address
-    memeId: { type: mongoose.Schema.Types.ObjectId, ref: "Meme", required: true }, // ✅ Chosen meme
-    hasVotedInRounds: { type: [Number], default: [] } // ✅ List of rounds in which the participant has already voted
-}, { timestamps: true });
+    raceId: { type: String, required: true, index: true },
+    walletAddress: { type: String, required: true, index: true },
+    memeId: { type: mongoose.Schema.Types.ObjectId, ref: "Meme", required: true },
+    amountSOL: { type: Number, required: true, default: 0.2 },
+    createdAt: { type: Date, default: Date.now },
+});
 
 const Participant = mongoose.model("Participant", participantSchema);
 export default Participant;

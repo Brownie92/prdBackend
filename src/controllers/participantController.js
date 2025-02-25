@@ -1,62 +1,49 @@
-import Race from "../models/Race.js";
-import Meme from "../models/Meme.js";
 import Participant from "../models/Participant.js";
+import mongoose from "mongoose";
 
 /**
- * Registers a participant in a race
+ * ✅ Registreer een deelnemer in de race na succesvolle betaling.
  */
 export const registerParticipant = async (req, res) => {
     try {
-        const { raceId, walletAddress, memeId } = req.body;
-
-        // Validate required fields
-        if (!raceId || !walletAddress || !memeId) {
-            return res.status(400).json({ message: "Race ID, Wallet Address, and Meme ID are required" });
-        }
-
-        // Check if the race exists
-        const raceExists = await Race.findOne({ raceId });
-        if (!raceExists) {
-            return res.status(404).json({ message: "Race not found" });
-        }
-
-        // Check if the selected meme exists
-        const memeExists = await Meme.findById(memeId);
-        if (!memeExists) {
-            return res.status(404).json({ message: "Selected meme not found" });
-        }
-
-        // Ensure the wallet is not already registered for this race
-        const existingParticipant = await Participant.findOne({ raceId, walletAddress });
-        if (existingParticipant) {
-            return res.status(400).json({ message: "You are already registered for this race" });
-        }
-
-        // Create and save the new participant
-        const newParticipant = new Participant({
-            raceId,
-            walletAddress,
-            memeId
-        });
-
-        await newParticipant.save();
-        res.status(201).json({ message: "Participant successfully registered", participant: newParticipant });
-
+      const { raceId, walletAddress, memeId, amountSOL } = req.body;
+  
+      // Validatie van vereiste velden
+      if (!raceId || !walletAddress || !memeId || !amountSOL) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+  
+      // Converteer memeId naar ObjectId
+      const memeObjectId = new mongoose.Types.ObjectId(memeId);
+  
+      // ✅ Maak een nieuwe deelnemer aan
+      const newParticipant = new Participant({
+        raceId,
+        walletAddress,
+        memeId: memeObjectId, // Zorg ervoor dat memeId als ObjectId wordt opgeslagen
+        amountSOL,
+      });
+  
+      await newParticipant.save();
+  
+      // ✅ Antwoord met succesbericht
+      return res.status(201).json({ message: "Participant registered successfully", participant: newParticipant });
     } catch (error) {
-        res.status(500).json({ message: "Error registering participant", error: error.message });
+      console.error("Error registering participant:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
-};
+  };
 
 /**
- * Retrieves all participants for a specific race
+ * ✅ Haal alle deelnemers van een specifieke race op.
  */
 export const getParticipantsByRace = async (req, res) => {
-    const { raceId } = req.params;
-
     try {
-        const participants = await Participant.find({ raceId });
-        res.status(200).json({ raceId, participants });
+        const { raceId } = req.params;
+        const participants = await Participant.find({ raceId }).populate("memeId");
+        res.status(200).json(participants);
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        console.error(`[ERROR] ❌ Failed to fetch participants:`, error);
+        res.status(500).json({ error: "Failed to fetch participants" });
     }
 };

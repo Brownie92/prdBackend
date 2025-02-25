@@ -3,10 +3,10 @@ import { registerParticipant, getParticipantsByRace } from "../controllers/parti
 
 const router = express.Router();
 
-// ✅ Register a new participant
+// ✅ Registreer een deelnemer (POST /api/participants)
 router.post("/", registerParticipant);
 
-// ✅ Fetch all participants for a specific race
+// ✅ Haal alle deelnemers van een specifieke race op (GET /api/participants/:raceId)
 router.get("/:raceId", getParticipantsByRace);
 
 export default router;
