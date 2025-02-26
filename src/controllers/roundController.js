@@ -1,6 +1,6 @@
 import Round from "../models/Round.js";
 import Race from "../models/Race.js";
-import Boost from "../models/Boost.js"; // ✅ Boosts ophalen
+import Boost from "../models/Boost.js";
 import { getRoundsByRace } from "../services/roundService.js";
 import { calculateProgressAndBoost } from "../utils/raceUtils.js";
 import { saveWinner } from "../controllers/winnerController.js";
@@ -39,39 +39,52 @@ export const processRound = async (race) => {
 
         console.log(`[DEBUG] 🔍 Boost summary for Race ${race.raceId} Round ${race.currentRound}:`, boostSummary);
 
-        // ✅ 2️⃣ Bereken progressie en boosts op basis van ingezette SOL
+        // ✅ 2️⃣ Bereken progressie en boosts
         const { updatedMemes, roundLog } = await calculateProgressAndBoost(race.memes, boostSummary);
 
-        // ✅ 3️⃣ Sla de ronde op in de database
+        // ✅ 3️⃣ Sla de ronde op in de database (basis progress en boost progress apart)
         const newRound = new Round({
             raceId: race.raceId,
             roundNumber: race.currentRound,
-            progress: roundLog.progress.map(meme => ({
-                memeId: meme.memeId,
-                progress: meme.progress,
-                boosted: meme.boosted,
-                boostAmount: meme.boostAmount
-            })),
+            progress: roundLog.progress.map(meme => {
+                const boostInfo = roundLog.boosts.find(boost => boost.memeId === meme.memeId) || { boostAmount: 0, boosted: false };
+                return {
+                    memeId: meme.memeId,
+                    progress: meme.progress,
+                    boosted: boostInfo.boosted,
+                    boostAmount: boostInfo.boostAmount
+                };
+            }),
             winner: roundLog.winner
         });
         await newRound.save();
+        console.log(`[DEBUG] ✅ Boosts correct opgeslagen in Round:`, newRound.progress);
 
-        // ✅ 4️⃣ Haal de totale progressie per meme op uit de `Round` collectie
         const progressData = await Round.aggregate([
             { $match: { raceId: race.raceId } },
             { $unwind: "$progress" },
-            { $group: { _id: "$progress.memeId", totalProgress: { $sum: "$progress.progress" } } }
+            { 
+                $group: { 
+                    _id: "$progress.memeId",
+                    baseProgress: { $sum: "$progress.progress" },  
+                    boostProgress: { $sum: "$progress.boostAmount" }  // ✅ Nu werkt het correct!
+                }
+            }
         ]);
+        
+        console.log(`[DEBUG] ✅ Total progress per meme from Round collection:`, progressData);
 
-        // ✅ 5️⃣ Update de progressie in de `Race` collectie
+        // ✅ 5️⃣ Update progress in de `Race` collectie
         race.memes = race.memes.map(meme => {
-            const progressInfo = progressData.find(p => p._id?.toString() === meme.memeId?.toString()) || { totalProgress: 0 };
-
+            const progressInfo = progressData.find(p => p._id?.toString() === meme.memeId?.toString()) || { baseProgress: 0, boostProgress: 0 };
             return {
                 ...meme,
-                progress: progressInfo.totalProgress
+                progress: progressInfo.baseProgress + progressInfo.boostProgress  // ✅ Correcte totale progressie opslaan
             };
         });
+        
+        await race.save();
+        console.log(`[DEBUG] ✅ Updated race progress:`, race.memes);
 
         // ✅ 6️⃣ Ga door naar de volgende ronde of sluit de race af
         if (race.currentRound < 6) {

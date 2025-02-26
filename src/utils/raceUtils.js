@@ -1,7 +1,7 @@
 export const calculateProgressAndBoost = (memes, boostSummary) => {
     if (!Array.isArray(memes) || memes.length === 0) {
         console.error("[ERROR] ❌ No memes found in race. Cannot calculate progress.");
-        return { updatedMemes: [], roundLog: { progress: [], winner: null } };
+        return { updatedMemes: [], roundLog: { progress: [], boosts: [], winner: null } };
     }
 
     const boostRanges = {
@@ -10,7 +10,7 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
         3: [5, 10]   
     };
 
-    const roundLog = { progress: [], winner: null };
+    const roundLog = { progress: [], boosts: [], winner: null };
 
     console.log(`[DEBUG] 🔍 Boost summary ontvangen:`, boostSummary);
 
@@ -19,7 +19,7 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
         const boostData = boostSummary.find(boost => boost._id.toString() === meme.memeId.toString());
         return {
             ...meme,
-            memeId: meme.memeId || meme._id?.toString(),  // ✅ Zorg ervoor dat memeId altijd een string is
+            memeId: meme.memeId || meme._id?.toString(),
             totalSol: boostData ? boostData.totalSol : 0  
         };
     });
@@ -44,24 +44,30 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
             boostAmount = Math.floor((boostPercentage / 100) * 100);
         }
 
-        const totalProgress = baseProgress + boostAmount;
+        // ✅ Debug logs voor basis en boost progressie
+        console.log(`[DEBUG] 🏆 Meme: ${meme.name} (ID: ${meme.memeId})`);
+        console.log(`       🔹 Base Progress: ${baseProgress}`);
+        console.log(`       🔹 Boosted: ${boosted}`);
+        console.log(`       🔹 Boost Amount: ${boostAmount}`);
+        console.log(`       🔹 Total SOL: ${meme.totalSol}`);
+        console.log(`       ➡️ Final Total Progress: ${baseProgress + boostAmount}`);
 
-        // ✅ Zorg ervoor dat `memeId` correct wordt opgeslagen
-        if (!meme.memeId) {
-            console.error(`[ERROR] ❌ Meme mist een memeId:`, meme);
-        }
-
+        // ✅ Basis progressie apart opslaan
         roundLog.progress.push({
-            memeId: meme.memeId || "UNKNOWN", // Fallback voor debugging
-            progress: totalProgress,
-            baseProgress,
-            boosted,
-            boostAmount
+            memeId: meme.memeId || "UNKNOWN",
+            progress: baseProgress,
+        });
+
+        // ✅ Boost progress apart opslaan
+        roundLog.boosts.push({
+            memeId: meme.memeId || "UNKNOWN",
+            boostAmount,
+            boosted
         });
 
         return {
             ...meme,
-            progress: (meme.progress || 0) + totalProgress
+            progress: (meme.progress || 0) + baseProgress + boostAmount
         };
     });
 
@@ -72,6 +78,8 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
         item.progress > max.progress ? item : max, { memeId: null, progress: 0 }
     );
     roundLog.winner = roundWinner.memeId;
+
+    console.log(`[DEBUG] 🏅 Ronde winnaar: ${roundWinner.memeId || "Geen winnaar bepaald"}`);
 
     return { updatedMemes, roundLog };
 };
