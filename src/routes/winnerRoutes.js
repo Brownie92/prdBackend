@@ -1,20 +1,23 @@
 import express from "express";
-import { saveWinner, getWinnerByRaceId, getAllWinners } from "../controllers/winnerController.js";
+import { saveWinner, getWinnerByRaceId, getAllWinners, getLatestWinner } from "../controllers/winnerController.js";
 
 const router = express.Router();
 
-// Get all winners
+// ✅ Haal alle winnaars op
 router.get("/", async (req, res) => {
     try {
-      const winners = await getAllWinners();
-      res.status(200).json(winners);
+        const winners = await getAllWinners();
+        res.status(200).json(winners);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch winners" });
+        res.status(500).json({ error: "Failed to fetch winners" });
     }
-  });
+});
 
-// ✅ Retrieve the winner for a specific race
-router.get("/:raceId", async (req, res) => {
+// ✅ Haal de laatste winnaar op (NIEUWE ROUTE)
+router.get("/latest", getLatestWinner);
+
+// ✅ Haal de winnaar van een specifieke race op
+router.get("/race/:raceId", async (req, res) => {
     try {
         const winner = await getWinnerByRaceId(req.params.raceId);
         if (!winner) {
@@ -26,7 +29,9 @@ router.get("/:raceId", async (req, res) => {
     }
 });
 
-// ✅ Manually force saving the winner for a race
+
+
+// ✅ Sla de winnaar van een race handmatig op
 router.post("/:raceId", async (req, res) => {
     try {
         await saveWinner(req.params.raceId);

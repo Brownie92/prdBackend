@@ -40,7 +40,7 @@ export const saveWinner = async (raceId) => {
     const winner = new Winner({
       raceId: race.raceId,
       memeId: winningMeme.memeId,
-      memeUrl: memeData.url, // ✅ Nu slaan we de meme URL direct op!
+      memeUrl: memeData.url, // ✅ Sla de meme URL direct op!
       progress: winningMeme.progress,
     });
 
@@ -66,6 +66,29 @@ export const getWinnerByRaceId = async (raceId) => {
   } catch (error) {
     console.error(`[ERROR] Failed to fetch winner:`, error);
     throw error;
+  }
+};
+
+/**
+ * Retrieve the latest winner (most recent winner).
+ */
+export const getLatestWinner = async (req, res) => {
+  try {
+    console.log("[DEBUG] Fetching latest winner...");
+
+    const latestWinner = await Winner.findOne().sort({ createdAt: -1 });
+
+    if (!latestWinner) {
+      console.warn("[WARNING] No winner found in database.");
+      return res.status(404).json({ error: "Winner not found" });
+    }
+
+    console.log("[DEBUG] Latest Winner Found:", latestWinner);
+
+    return res.status(200).json(latestWinner);
+  } catch (error) {
+    console.error("[ERROR] Failed to fetch latest winner:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

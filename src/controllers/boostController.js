@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Boost from "../models/Boost.js";
-import { sendRaceUpdate } from "../socket.js"; // ✅ WebSocket event om boosts live te updaten
+import { sendBoostUpdate } from "../socket.js";
 
 export const addBoost = async (req, res) => {
     try {
@@ -33,7 +33,7 @@ export const addBoost = async (req, res) => {
         ]);
 
         // ✅ WebSocket event versturen naar de UI
-        sendRaceUpdate({ raceId, round, boosts: boostSummary });
+        sendBoostUpdate({ raceId, round, boosts: boostSummary });
 
         return res.json({ success: true, boosts: boostSummary });
     } catch (error) {

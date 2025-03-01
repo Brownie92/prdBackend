@@ -26,4 +26,33 @@ router.post("/:raceId/process-round", async (req, res) => {
     }
 });
 
+router.get("/:raceId/last-round-boosts", async (req, res) => {
+    try {
+        const { raceId } = req.params;
+        const lastRound = await Round.findOne({ raceId })
+            .sort({ roundNumber: -1 }) // ✅ Pak de laatste ronde op basis van roundNumber
+            .lean();
+
+        if (!lastRound || !lastRound.progress) {
+            return res.status(404).json({ message: "No boost data found for the last round." });
+        }
+
+        // ✅ Filter alleen de gebooste memes eruit
+        const boosts = lastRound.progress
+            .filter((entry) => entry.boosted)
+            .map((entry) => ({
+                memeId: entry.memeId,
+                boostAmount: entry.boostAmount,
+                boostRound: lastRound.roundNumber, // ✅ Belangrijk!
+            }));
+
+        console.log("📡 Sending last round boosts:", boosts);
+        res.json(boosts);
+    } catch (error) {
+        console.error("[ERROR] ❌ Failed to fetch last round boosts:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+
 export default router;
