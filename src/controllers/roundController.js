@@ -4,7 +4,7 @@ import Boost from "../models/Boost.js";
 import { getRoundsByRace } from "../services/roundService.js";
 import { calculateProgressAndBoost } from "../utils/raceUtils.js";
 import { saveWinner } from "../controllers/winnerController.js";
-import { sendRaceUpdate, sendWinnerUpdate } from "../socket.js";
+import { sendRaceUpdate, sendWinnerUpdate, sendRaceClosed } from "../socket.js";
 
 /**
  * ✅ Haal alle rondes op voor een specifieke race
@@ -93,12 +93,18 @@ export const processRound = async (race) => {
         } else {
             race.status = "closed";
             await race.save();
+            
+            console.log("[DEBUG] ✅ Race status updated to closed:", race); // ✅ Loggen voor debugging
+            
+            sendRaceClosed(race); // ✅ WebSocket-event versturen dat race gesloten is
+            
             try {
                 await saveWinner(race.raceId);
                 sendWinnerUpdate(race.raceId);
             } catch (winnerError) {
-                console.error(`Error saving winner:`, winnerError);
+                console.error("[ERROR] ❌ Error saving winner:", winnerError);
             }
+            
             return { race, newRound };
         }
 

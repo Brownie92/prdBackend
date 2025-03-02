@@ -20,14 +20,14 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
         return {
             ...meme,
             memeId: meme.memeId || meme._id?.toString(),
-            totalSol: boostData ? boostData.totalSol : 0  
+            boostAmount: boostData ? boostData.totalSol : 0  // ✅ Correcte naamgeving (niet `totalSol`)
         };
     });
 
-    // ✅ Sorteer de memes op de totale SOL die is ingezet
-    const sortedMemes = [...memesWithBoost].sort((a, b) => b.totalSol - a.totalSol);
+    // ✅ Sorteer de memes op de boostAmount van deze ronde
+    const sortedMemes = [...memesWithBoost].sort((a, b) => b.boostAmount - a.boostAmount);
 
-    console.log(`[DEBUG] ✅ Memes gesorteerd op boost:`, sortedMemes);
+    console.log(`[DEBUG] ✅ Memes gesorteerd op boostAmount:`, sortedMemes);
 
     // ✅ Bereken progressie en pas boosts toe
     const updatedMemes = sortedMemes.map((meme, index) => {
@@ -36,8 +36,8 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
         let boosted = false;
         let boostAmount = 0;
 
-        // ✅ Pas boosts toe op de top 3 meest gebooste memes
-        if (index < 3 && meme.totalSol > 0) {
+        // ✅ Pas boosts toe op de top 3 meest gebooste memes in **deze ronde**
+        if (index < 3 && meme.boostAmount > 0) {
             boosted = true;
             const [minBoost, maxBoost] = boostRanges[index + 1];
             const boostPercentage = Math.random() * (maxBoost - minBoost) + minBoost;
@@ -49,7 +49,7 @@ export const calculateProgressAndBoost = (memes, boostSummary) => {
         console.log(`       🔹 Base Progress: ${baseProgress}`);
         console.log(`       🔹 Boosted: ${boosted}`);
         console.log(`       🔹 Boost Amount: ${boostAmount}`);
-        console.log(`       🔹 Total SOL: ${meme.totalSol}`);
+        console.log(`       🔹 Boost Amount deze ronde: ${meme.boostAmount}`);
         console.log(`       ➡️ Final Total Progress: ${baseProgress + boostAmount}`);
 
         // ✅ Basis progressie apart opslaan

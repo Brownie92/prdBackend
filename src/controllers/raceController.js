@@ -1,6 +1,7 @@
 import Race from "../models/Race.js";
 import * as raceService from "../services/raceService.js";
-import { sendRaceCreated, sendRaceUpdate } from "../socket.js"; // ✅ WebSockets via socket.js
+import Vault from "../models/Vault.js";
+import { sendRaceCreated, sendRaceUpdate, sendRaceClosed } from "../socket.js"; // ✅ WebSockets via socket.js
 
 /**
  * ✅ Start een nieuwe race
@@ -8,6 +9,15 @@ import { sendRaceCreated, sendRaceUpdate } from "../socket.js"; // ✅ WebSocket
 export const startRace = async (req, res) => {
     try {
         const race = await raceService.createRace();
+
+        // ✅ Maak een Vault entry voor deze race met 0 SOL
+        const newVault = new Vault({
+            raceId: race.raceId,
+            totalSol: 0, // ✅ Startwaarde van de Vault is 0 SOL
+        });
+
+        await newVault.save();
+        console.log(`✅ [VAULT] Vault aangemaakt voor race ${race.raceId} met 0 SOL.`);
 
         // ✅ WebSocket: Stuur race event naar frontend
         sendRaceCreated(race);
@@ -56,7 +66,7 @@ export const getCurrentRace = async (req, res) => {
         }
 
         res.status(200).json({
-            raceId: latestRace._id,
+            raceId: latestRace.raceId,
             memes: latestRace.memes,
             currentRound: latestRace.currentRound, // 🔥 Zorg dat dit altijd correct is
             roundEndTime: latestRace.roundEndTime,
@@ -66,6 +76,7 @@ export const getCurrentRace = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch current race", error: error.message });
     }
 };
+
 /**
  * ✅ Update de status van een race
  */
@@ -77,6 +88,11 @@ export const updateRaceStatus = async (req, res) => {
 
         // ✅ WebSocket: Stuur race update event
         sendRaceUpdate(race);
+
+        // ✅ Als de race gesloten wordt, stuur een apart event
+        if (status === "closed") {
+            sendRaceClosed(race);
+        }
 
         res.status(200).json({ message: "Race status updated successfully", race });
     } catch (error) {
