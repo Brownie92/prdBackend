@@ -65,3 +65,29 @@ export const getParticipantsByRace = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch participants" });
     }
 };
+
+/**
+ * ✅ Controleer of een wallet al een deelnemer is van een race
+ */
+export const checkParticipantExists = async (req, res) => {
+  try {
+      const { raceId, walletAddress } = req.params;
+
+      // ✅ Validatie van invoer
+      if (!raceId || !walletAddress) {
+          return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      // ✅ Zoek of de gebruiker al een meme heeft gekozen voor deze race
+      const existingParticipant = await Participant.findOne({ raceId, walletAddress });
+
+      if (existingParticipant) {
+          return res.json({ exists: true, memeId: existingParticipant.memeId });
+      } else {
+          return res.json({ exists: false });
+      }
+  } catch (error) {
+      console.error("❌ Error checking participant:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
