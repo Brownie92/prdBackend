@@ -32,16 +32,62 @@ export const updateVault = async (raceId, amountSOL) => {
 export const getVaultByRace = async (req, res) => {
     try {
         const { raceId } = req.params;
+
+        console.log(`[DEBUG] 🔍 Fetching Vault for raceId: ${raceId}`);
+
         const vault = await Vault.findOne({ raceId });
 
         if (!vault) {
+            console.warn(`[DEBUG] ❌ No Vault found for raceId: ${raceId}`);
             return res.status(404).json({ error: "Vault not found for this race." });
         }
 
+        console.log(`[DEBUG] ✅ Vault found for race ${raceId}: ${vault.totalSol} SOL`);
         res.status(200).json(vault);
     } catch (error) {
         console.error("❌ Error fetching Vault:", error);
         res.status(500).json({ error: "Failed to retrieve Vault data." });
+    }
+};
+
+/**
+ * ✅ Haal de Vault op van de meest recente actieve race
+ */
+export const getLatestActiveVault = async (req, res) => {
+    try {
+        console.log("[DEBUG] 🔍 Searching for latest active race...");
+
+        // ✅ Zoek de laatste race die actief is
+        const latestActiveRace = await Race.findOne({ status: "active" }).sort({ createdAt: -1 });
+
+        if (!latestActiveRace) {
+            console.log("[DEBUG] ❌ No active race found.");
+            return res.status(404).json({ message: "No active race found." });
+        }
+
+        console.log("[DEBUG] ✅ Found active race:", latestActiveRace);
+
+        const raceId = latestActiveRace.raceId;
+        console.log(`[DEBUG] 🔍 Looking for Vault with raceId: ${raceId}`);
+
+        // ✅ Zoek de Vault voor deze actieve race
+        const activeVault = await Vault.findOne({ raceId });
+
+        if (!activeVault) {
+            console.log(`[DEBUG] ❌ No Vault found for active raceId: ${raceId}`);
+            return res.status(404).json({ message: "No Vault found for latest active race." });
+        }
+
+        console.log("[DEBUG] ✅ Found Active Vault:", activeVault);
+
+        // ✅ Stuur de Vault terug als JSON
+        res.status(200).json({
+            raceId: activeVault.raceId,
+            totalSol: activeVault.totalSol
+        });
+    } catch (error) {
+        console.error("[ERROR] ❌ Failed to fetch latest active vault:", error);
+        res.status(500).json({ error: "Failed to fetch latest active vault." });
     }
 };
 
