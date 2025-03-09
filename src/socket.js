@@ -70,7 +70,14 @@ export const emitEvent = (eventName, data) => {
 export const sendRaceCreated = (race) => emitEvent("raceCreated", race);
 export const sendRaceUpdate = (race) => emitEvent("raceUpdate", race);
 export const sendRoundUpdate = (round) => emitEvent("roundUpdate", round);
-export const sendBoostUpdate = (boostData) => emitEvent("boostUpdate", boostData);
 export const sendWinnerUpdate = (winner) => emitEvent("winnerUpdate", winner);
 export const sendRaceClosed = (race) => emitEvent("raceClosed", race);
 export const sendVaultUpdate = (vaultData) => emitEvent("vaultUpdate", vaultData);
+export const sendBoostUpdate = (boostData) => {
+    const formattedBoosts = boostData.boosts.map(boost => ({
+        ...boost,
+        memeId: String(boost.memeId) // Ensure memeId is a string
+    }));
+
+    emitEvent("boostUpdate", { ...boostData, boosts: formattedBoosts });
+};

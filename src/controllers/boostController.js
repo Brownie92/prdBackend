@@ -11,12 +11,6 @@ export const addBoost = async (req, res) => {
             return res.status(400).json({ success: false, error: "Missing required fields." });
         }
 
-        if (!mongoose.Types.ObjectId.isValid(memeId)) {
-            return res.status(400).json({ success: false, error: "Invalid memeId format" });
-        }
-
-        memeId = new mongoose.Types.ObjectId(memeId);
-
         const newBoost = new Boost({ walletAddress, memeId, raceId, amountSOL, round });
         await newBoost.save();
 
@@ -36,10 +30,15 @@ export const addBoost = async (req, res) => {
             { $sort: { totalSol: -1 } }
         ]);
 
-        sendBoostUpdate({ raceId, round, boosts: boostSummary });
+        const formattedBoosts = boostSummary.map(boost => ({
+            memeId: boost._id.toString(), // ✅ Zet ObjectId om naar string
+            totalSol: boost.totalSol
+        }));
+
+        sendBoostUpdate({ raceId, round, boosts: formattedBoosts });
         sendVaultUpdate(updatedVault);
 
-        return res.json({ success: true, boosts: boostSummary, vault: updatedVault });
+        return res.json({ success: true, boosts: formattedBoosts, vault: updatedVault });
     } catch (error) {
         console.error("❌ Error processing boost:", error);
         return res.status(500).json({ success: false, error: "Boost processing failed." });
@@ -65,11 +64,10 @@ export const getBoostsByRace = async (req, res) => {
             return res.status(400).json({ success: false, error: "Ronde moet een nummer zijn." });
         }
 
-        // ✅ Aggregatie om de totale SOL per memeId te berekenen
         const boostSummary = await Boost.aggregate([
-            { $match: { raceId, round: roundNumber } }, // Filter per race en ronde
-            { $group: { _id: "$memeId", totalSol: { $sum: "$amountSOL" } } }, // Total SOL per meme
-            { $sort: { totalSol: -1 } } // Sorteer van hoog naar laag
+            { $match: { raceId, round: roundNumber } },
+            { $group: { _id: "$memeId", totalSol: { $sum: "$amountSOL" } } },
+            { $sort: { totalSol: -1 } }
         ]);
 
         if (!boostSummary.length) {
@@ -77,13 +75,12 @@ export const getBoostsByRace = async (req, res) => {
             return res.status(404).json({ success: false, message: "Geen boosts gevonden." });
         }
 
-        console.log(`[API] ✅ Boosts samengevoegd en gesorteerd: ${boostSummary.length} resultaten`);
-        
-        // ✅ Transformeer naar een consistent JSON-formaat zoals WebSocket
         const formattedBoosts = boostSummary.map(boost => ({
-            memeId: boost._id,
+            memeId: boost._id.toString(), // ✅ Zet ObjectId om naar string
             totalSol: boost.totalSol
         }));
+
+        console.log(`[API] ✅ Boosts samengevoegd en gesorteerd: ${formattedBoosts.length} resultaten`);
 
         res.status(200).json({ success: true, boosts: formattedBoosts });
     } catch (error) {
