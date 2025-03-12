@@ -3,6 +3,8 @@ import Vault from "../models/Vault.js";
 import mongoose from "mongoose";
 import { sendVaultUpdate } from "../socket.js"; // ✅ WebSocket voor live updates
 
+
+
 /**
  * ✅ Registreer een deelnemer en update The Vault
  */
