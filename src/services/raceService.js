@@ -9,18 +9,15 @@ export const createRace = async () => {
     const raceId = `race${Date.now()}`;
 
     try {
-        // ✅ Check if there are enough memes in the database
         const totalMemes = await Meme.countDocuments();
         if (totalMemes < 6) {
             throw new Error("Not enough memes in the database to start a race");
         }
 
-        // ✅ Retrieve 6 random memes
         const randomMemes = totalMemes === 6
             ? await Meme.find().limit(6)
             : await Meme.aggregate([{ $sample: { size: 6 } }]);
 
-        // ✅ Create a new race
         const newRace = new Race({
             raceId,
             memes: randomMemes.map(meme => ({
@@ -34,7 +31,6 @@ export const createRace = async () => {
             roundEndTime: new Date(Date.now() + 3 * 60 * 1000),
         });
 
-        // ✅ Save the race to the database
         await newRace.save();
         return newRace;
     } catch (error) {

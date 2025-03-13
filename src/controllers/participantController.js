@@ -1,31 +1,29 @@
 import Participant from "../models/Participant.js";
 import Vault from "../models/Vault.js";
 import mongoose from "mongoose";
-import { sendVaultUpdate } from "../socket.js"; // ✅ WebSocket voor live updates
-
-
+import { sendVaultUpdate } from "../socket.js"; // WebSocket for live updates
 
 /**
- * ✅ Registreer een deelnemer en update The Vault
+ * Register a participant and update The Vault
  */
 export const registerParticipant = async (req, res) => {
     try {
         const { raceId, walletAddress, memeId, amountSOL } = req.body;
 
-        // ✅ Validatie van invoer
+        // Validate input fields
         if (!raceId || !walletAddress || !memeId || !amountSOL) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        // ✅ Controleer of memeId een geldig ObjectId is
+        // Check if memeId is a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(memeId)) {
             return res.status(400).json({ success: false, error: "Invalid memeId format" });
         }
 
-        // ✅ Converteer memeId naar ObjectId voor MongoDB
+        // Convert memeId to ObjectId for MongoDB
         const memeObjectId = new mongoose.Types.ObjectId(memeId);
 
-        // ✅ Maak een nieuwe deelnemer aan
+        // Create a new participant
         const newParticipant = new Participant({
             raceId,
             walletAddress,
@@ -35,16 +33,14 @@ export const registerParticipant = async (req, res) => {
 
         await newParticipant.save();
 
-        // ✅ Voeg SOL toe aan The Vault voor deze race
+        // Add SOL to The Vault for this race
         const updatedVault = await Vault.findOneAndUpdate(
             { raceId },
-            { $inc: { totalSol: amountSOL } }, // ✅ Voeg SOL toe aan The Vault
+            { $inc: { totalSol: amountSOL } }, // Add SOL to The Vault
             { upsert: true, new: true }
         );
 
-        console.log(`✅ [VAULT] ${amountSOL} SOL toegevoegd aan Vault voor race ${raceId}`);
-
-        // ✅ WebSocket event versturen naar de UI voor live Vault updates
+        // Send WebSocket event to the UI for live Vault updates
         sendVaultUpdate(updatedVault);
 
         return res.status(201).json({ message: "Participant registered successfully", participant: newParticipant, vault: updatedVault });
@@ -55,7 +51,7 @@ export const registerParticipant = async (req, res) => {
 };
 
 /**
- * ✅ Haal alle deelnemers van een specifieke race op.
+ * Fetch all participants of a specific race.
  */
 export const getParticipantsByRace = async (req, res) => {
     try {
@@ -69,18 +65,18 @@ export const getParticipantsByRace = async (req, res) => {
 };
 
 /**
- * ✅ Controleer of een wallet al een deelnemer is van een race
+ * Check if a wallet is already a participant of a race
  */
 export const checkParticipantExists = async (req, res) => {
   try {
       const { raceId, walletAddress } = req.params;
 
-      // ✅ Validatie van invoer
+      // Validate input parameters
       if (!raceId || !walletAddress) {
           return res.status(400).json({ error: "Missing required parameters" });
       }
 
-      // ✅ Zoek of de gebruiker al een meme heeft gekozen voor deze race
+      // Check if the user has already chosen a meme for this race
       const existingParticipant = await Participant.findOne({ raceId, walletAddress });
 
       if (existingParticipant) {

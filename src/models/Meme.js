@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const memeSchema = new mongoose.Schema({
-    memeId: { type: String, unique: true, default: function () { return this._id.toString(); } }, // ✅ memeId = ObjectId
+    memeId: { type: String, unique: true, default: function () { return this._id.toString(); } }, //  memeId = ObjectId
     name: { type: String, required: true },
     url: { type: String, required: true },
   });

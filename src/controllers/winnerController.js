@@ -20,7 +20,6 @@ export const saveWinner = async (raceId) => {
       return;
     }
 
-    console.log(`[INFO] Determining winner for race ${raceId}...`);
 
     await Race.findOneAndUpdate({ raceId }, { status: "closed" });
 
@@ -40,7 +39,7 @@ export const saveWinner = async (raceId) => {
     const winner = new Winner({
       raceId: race.raceId,
       memeId: winningMeme.memeId,
-      memeUrl: memeData.url, // ✅ Sla de meme URL direct op!
+      memeUrl: memeData.url, // Store the meme URL directly
       progress: winningMeme.progress,
     });
 
@@ -74,16 +73,11 @@ export const getWinnerByRaceId = async (raceId) => {
  */
 export const getLatestWinner = async (req, res) => {
   try {
-    console.log("[DEBUG] Fetching latest winner...");
-
     const latestWinner = await Winner.findOne().sort({ createdAt: -1 });
-
     if (!latestWinner) {
       console.warn("[WARNING] No winner found in database.");
       return res.status(404).json({ error: "Winner not found" });
     }
-
-    console.log("[DEBUG] Latest Winner Found:", latestWinner);
 
     return res.status(200).json(latestWinner);
   } catch (error) {

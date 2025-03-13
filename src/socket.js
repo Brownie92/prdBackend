@@ -1,34 +1,26 @@
 import { WebSocketServer } from "ws";
 import http from "http";
+import dotenv from "dotenv";
 
-let wss = null; // ✅ WebSocket Server instance
+dotenv.config();
 
-/**
- * Initialize WebSocket server.
- * @param {object} server - HTTP server instance
- */
+let wss = null;
+const WS_PORT = process.env.WS_PORT || 6001;
+
 export const initSocket = (server) => {
     if (!server) {
-        console.error("[WS] ❌ Cannot initialize WebSocket: No server instance found.");
-        return;
+        wss = new WebSocketServer({ port: WS_PORT });
+        console.log(`[INFO] WebSocket server started on port ${WS_PORT}`);
+    } else {
+        wss = new WebSocketServer({ server });
     }
 
-    wss = new WebSocketServer({ server });
-
     wss.on("connection", (ws) => {
-        console.log("[WS] 🟢 New client connected");
+        ws.on("message", (message) => {});
 
-        ws.on("message", (message) => {
-            console.log(`[WS] 📩 Received: ${message}`);
-        });
+        ws.on("close", (code, reason) => {});
 
-        ws.on("close", (code, reason) => {
-            console.log(`[WS] 🔴 Client disconnected. Code: ${code}, Reason: ${reason}`);
-        });
-
-        ws.on("error", (error) => {
-            console.error(`[WS] ❌ WebSocket error:`, error);
-        });
+        ws.on("error", (error) => {});
 
         ws.send(JSON.stringify({ event: "connection", data: "Connection established!" }));
     });
@@ -36,37 +28,25 @@ export const initSocket = (server) => {
     return wss;
 };
 
-/**
- * Retrieve the WebSocket Server instance.
- * @returns {object} WebSocket Server (`wss`)
- * @throws Error if WebSocket is not initialized
- */
 export const getIo = () => {
     if (!wss) {
-        throw new Error("[WS] ❌ WebSocket is not initialized!");
+        throw new Error("WebSocket is not initialized!");
     }
     return wss;
 };
 
-/**
- * Emit a WebSocket event with data to all connected clients.
- * @param {string} eventName - Event name
- * @param {object} data - Event payload
- */
 export const emitEvent = (eventName, data) => {
     if (!wss) {
-        console.warn(`[WS] ⚠️ Cannot send event "${eventName}": WebSocket is not initialized.`);
         return;
     }
     const payload = JSON.stringify({ event: eventName, data });
     wss.clients.forEach(client => {
-        if (client.readyState === 1) { // ✅ Alleen actieve verbindingen
+        if (client.readyState === 1) {
             client.send(payload);
         }
     });
 };
 
-// **WebSocket event emitters**
 export const sendRaceCreated = (race) => emitEvent("raceCreated", race);
 export const sendRaceUpdate = (race) => emitEvent("raceUpdate", race);
 export const sendRoundUpdate = (round) => emitEvent("roundUpdate", round);
@@ -76,7 +56,7 @@ export const sendVaultUpdate = (vaultData) => emitEvent("vaultUpdate", vaultData
 export const sendBoostUpdate = (boostData) => {
     const formattedBoosts = boostData.boosts.map(boost => ({
         ...boost,
-        memeId: String(boost.memeId) // Ensure memeId is a string
+        memeId: String(boost.memeId)
     }));
 
     emitEvent("boostUpdate", { ...boostData, boosts: formattedBoosts });

@@ -3,7 +3,7 @@ import { saveWinner, getWinnerByRaceId, getAllWinners, getLatestWinner } from ".
 
 const router = express.Router();
 
-// ✅ Haal alle winnaars op
+// Retrieve all winners
 router.get("/", async (req, res) => {
     try {
         const winners = await getAllWinners();
@@ -13,10 +13,10 @@ router.get("/", async (req, res) => {
     }
 });
 
-// ✅ Haal de laatste winnaar op (NIEUWE ROUTE)
+// Retrieve the latest winner
 router.get("/latest", getLatestWinner);
 
-// ✅ Haal de winnaar van een specifieke race op
+// Retrieve the winner of a specific race
 router.get("/race/:raceId", async (req, res) => {
     try {
         const winner = await getWinnerByRaceId(req.params.raceId);
@@ -29,9 +29,7 @@ router.get("/race/:raceId", async (req, res) => {
     }
 });
 
-
-
-// ✅ Sla de winnaar van een race handmatig op
+// Manually save the winner of a race
 router.post("/:raceId", async (req, res) => {
     try {
         await saveWinner(req.params.raceId);

@@ -14,24 +14,22 @@ export const addBoost = async (req, res) => {
         const newBoost = new Boost({ walletAddress, memeId, raceId, amountSOL, round });
         await newBoost.save();
 
-        console.log(`✅ [BOOST] ${walletAddress} boosted Meme ${memeId} with ${amountSOL} SOL in Round ${round}`);
-
         const updatedVault = await Vault.findOneAndUpdate(
             { raceId },
             { $inc: { totalSol: amountSOL } },
             { upsert: true, new: true }
         );
 
-        console.log(`✅ [VAULT] ${amountSOL} SOL toegevoegd aan Vault voor race ${raceId}`);
-
+        // Aggregate boosts for the current round and race
         const boostSummary = await Boost.aggregate([
             { $match: { raceId, round } },
             { $group: { _id: "$memeId", totalSol: { $sum: "$amountSOL" } } },
             { $sort: { totalSol: -1 } }
         ]);
 
+        // Format boost data
         const formattedBoosts = boostSummary.map(boost => ({
-            memeId: boost._id.toString(), // ✅ Zet ObjectId om naar string
+            memeId: boost._id.toString(), // Convert ObjectId to string
             totalSol: boost.totalSol
         }));
 
@@ -40,30 +38,24 @@ export const addBoost = async (req, res) => {
 
         return res.json({ success: true, boosts: formattedBoosts, vault: updatedVault });
     } catch (error) {
-        console.error("❌ Error processing boost:", error);
         return res.status(500).json({ success: false, error: "Boost processing failed." });
     }
 };
 
 export const getBoostsByRace = async (req, res) => {
-    console.log("[DEBUG] 🔍 Boost route aangeroepen met params:", req.params);
-
     try {
         const { raceId, round } = req.params;
 
         if (!raceId || !round) {
-            console.warn("[DEBUG] ❌ Ongeldige request params:", { raceId, round });
-            return res.status(400).json({ success: false, error: "Race ID en ronde zijn vereist." });
+            return res.status(400).json({ success: false, error: "Race ID and round are required." });
         }
-
-        console.log(`[API] 🔍 Fetching total boosts for race ${raceId}, round ${round}`);
 
         const roundNumber = parseInt(round, 10);
         if (isNaN(roundNumber)) {
-            console.warn("[DEBUG] ❌ Ongeldige ronde:", round);
-            return res.status(400).json({ success: false, error: "Ronde moet een nummer zijn." });
+            return res.status(400).json({ success: false, error: "Round must be a number." });
         }
 
+        // Aggregate boosts for the requested race and round
         const boostSummary = await Boost.aggregate([
             { $match: { raceId, round: roundNumber } },
             { $group: { _id: "$memeId", totalSol: { $sum: "$amountSOL" } } },
@@ -71,20 +63,17 @@ export const getBoostsByRace = async (req, res) => {
         ]);
 
         if (!boostSummary.length) {
-            console.log(`[API] ⚠️ Geen boosts gevonden voor race ${raceId}, ronde ${roundNumber}`);
-            return res.status(404).json({ success: false, message: "Geen boosts gevonden." });
+            return res.status(404).json({ success: false, message: "No boosts found." });
         }
 
+        // Format boost data
         const formattedBoosts = boostSummary.map(boost => ({
-            memeId: boost._id.toString(), // ✅ Zet ObjectId om naar string
+            memeId: boost._id.toString(), // Convert ObjectId to string
             totalSol: boost.totalSol
         }));
 
-        console.log(`[API] ✅ Boosts samengevoegd en gesorteerd: ${formattedBoosts.length} resultaten`);
-
         res.status(200).json({ success: true, boosts: formattedBoosts });
     } catch (error) {
-        console.error("❌ Error fetching boosts:", error);
-        res.status(500).json({ success: false, error: "Boost ophalen mislukt." });
+        res.status(500).json({ success: false, error: "Failed to fetch boosts." });
     }
 };

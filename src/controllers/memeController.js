@@ -5,7 +5,7 @@ import Meme from "../models/Meme.js";
  */
 export const getAllMemes = async (req, res) => {
     try {
-        const memes = await Meme.find().lean(); // ✅ Using `lean()` for better performance
+        const memes = await Meme.find().lean();
         res.status(200).json(memes);
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch memes', error: error.message });
@@ -48,10 +48,9 @@ export const getMemesByIds = async (req, res) => {
     }
 
     try {
-        // Convert memeIds to Strings and fetch only the required fields
         const memes = await Meme.find({ memeId: { $in: memeIds.map(String) } })
-            .select("memeId name url") // ✅ Fetch only relevant fields
-            .lean(); // ✅ Optimized query with `lean()`
+            .select("memeId name url")
+            .lean();
 
         if (memes.length === 0) {
             return res.status(404).json({ message: "No memes found for the provided IDs" });

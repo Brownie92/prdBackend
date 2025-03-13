@@ -3,14 +3,13 @@ import { checkParticipantExists, registerParticipant, getParticipantsByRace } fr
 
 const router = express.Router();
 
-
-// ✅ Controleer of een wallet al een deelnemer is voor deze race
+// Check if a wallet is already a participant in this race
 router.get("/check/:raceId/:walletAddress", checkParticipantExists);
 
-// ✅ Registreer een deelnemer
+// Register a participant
 router.post("/", registerParticipant);
 
-// ✅ Haal alle deelnemers van een specifieke race op
+// Retrieve all participants for a specific race
 router.get("/:raceId", getParticipantsByRace);
 
 export default router;

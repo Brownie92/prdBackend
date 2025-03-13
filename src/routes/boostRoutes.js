@@ -3,10 +3,10 @@ import { addBoost, getBoostsByRace } from "../controllers/boostController.js";
 
 const router = express.Router();
 
-// ✅ Boost registratie endpoint
+// Boost registration endpoint
 router.post("/", addBoost);
 
-// ✅ Nieuwe GET-route om boosts op te halen per race (verplicht raceId en round)
+// New GET route to retrieve boosts by race (requires raceId and round)
 router.get("/:raceId/:round", getBoostsByRace);
 
 export default router;

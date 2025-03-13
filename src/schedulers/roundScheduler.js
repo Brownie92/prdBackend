@@ -4,20 +4,15 @@ import { processRound } from "../controllers/roundController.js";
 
 console.log("[INFO] ⏳ Round scheduler initialized...");
 
-// 🔄 Check every minute if a round has expired and needs processing
+// Schedule a task to check every minute if a round has expired
 cron.schedule("* * * * *", async () => {
-    console.log("[INFO] 🔍 Checking for races with expired rounds...");
-    
     try {
         const now = new Date();
         const activeRaces = await Race.find({ status: "active", roundEndTime: { $lte: now } });
 
         if (activeRaces.length === 0) {
-            console.log("[INFO] ✅ No expired rounds found.");
             return;
         }
-
-        console.log(`[INFO] ⏳ Found ${activeRaces.length} races with expired rounds. Processing...`);
 
         for (const race of activeRaces) {
             try {

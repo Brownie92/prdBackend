@@ -5,10 +5,10 @@ import { calculateProgressAndBoost } from "../utils/raceUtils.js";
 
 const router = express.Router();
 
-// ✅ Retrieve all rounds for a specific race
+// Retrieve all rounds for a specific race
 router.get("/:raceId", getRounds);
 
-// ✅ Manually process a round
+// Manually process a round
 router.post("/:raceId/process-round", async (req, res) => {
     try {
         const { raceId } = req.params;
@@ -30,29 +30,27 @@ router.get("/:raceId/last-round-boosts", async (req, res) => {
     try {
         const { raceId } = req.params;
         const lastRound = await Round.findOne({ raceId })
-            .sort({ roundNumber: -1 }) // ✅ Pak de laatste ronde op basis van roundNumber
+            .sort({ roundNumber: -1 }) // Get the last round based on roundNumber
             .lean();
 
         if (!lastRound || !lastRound.progress) {
             return res.status(404).json({ message: "No boost data found for the last round." });
         }
 
-        // ✅ Filter alleen de gebooste memes eruit
+        // Filter only the boosted memes
         const boosts = lastRound.progress
             .filter((entry) => entry.boosted)
             .map((entry) => ({
                 memeId: entry.memeId,
                 boostAmount: entry.boostAmount,
-                boostRound: lastRound.roundNumber, // ✅ Belangrijk!
+                boostRound: lastRound.roundNumber, // Important!
             }));
 
-        console.log("📡 Sending last round boosts:", boosts);
         res.json(boosts);
     } catch (error) {
         console.error("[ERROR] ❌ Failed to fetch last round boosts:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 });
-
 
 export default router;

@@ -3,19 +3,19 @@ import { startRace, getRace, getAllRaces, updateRaceStatus, getCurrentRace } fro
 
 const router = express.Router();
 
-// ✅ Route om de huidige race op te halen
+// Route to get the current race
 router.get("/current", getCurrentRace);
 
-// ✅ Start een nieuwe race
+// Start a new race
 router.post("/", startRace);
 
-// ✅ Haal alle races op
+// Get all races
 router.get("/", getAllRaces);
 
-// ✅ Haal een specifieke race op
+// Get a specific race
 router.get("/:raceId", getRace);
 
-// ✅ Update de status van een race
+// Update the status of a race
 router.patch("/:raceId/status", updateRaceStatus);
 
 export default router;
