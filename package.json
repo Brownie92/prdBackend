@@ -12,9 +12,11 @@
   "description": "",
   "dependencies": {
     "@solana/web3.js": "^1.98.0",
+    "axios": "^1.8.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "luxon": "^3.5.0",
     "mongoose": "^8.10.1",
     "node-cron": "^3.0.3",
     "socket.io": "^4.8.1"

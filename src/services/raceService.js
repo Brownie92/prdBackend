@@ -1,5 +1,7 @@
 import Race from "../models/Race.js";
 import Meme from "../models/Meme.js";
+import Participant from "../models/Participant.js";
+import { getNextRoundStartTime, getNextFiveAM } from "../utils/timeUtils.js";
 
 /**
  * Creates a new race with random memes.
@@ -28,11 +30,40 @@ export const createRace = async () => {
                 progress: 0,
             })),
             currentRound: 1,
-            roundEndTime: new Date(Date.now() + 3 * 60 * 1000),
+            roundEndTime: getNextFiveAM(), // ✅ Set first round's end time to 05:00 AM CET
+            status: "waiting",
         });
 
         await newRace.save();
         return newRace;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Updates the race's round end time when 100 participants are reached.
+ * If 100 participants are not reached by 05:00, postpone to the next day.
+ * @param {string} raceId - The race ID.
+ */
+export const updateRaceStartTime = async (raceId) => {
+    try {
+        const race = await Race.findOne({ raceId });
+        if (!race) throw new Error("Race not found");
+
+        const participantCount = await Participant.countDocuments({ raceId });
+
+        if (participantCount >= 100) {
+            // Update race status to active and set round end time to 05:00 AM CET
+            race.status = "active";
+            race.roundEndTime = getNextRoundStartTime();
+        } else {
+            // Keep race in waiting status and postpone Round 2 start to the next day at 05:00 AM CET
+            race.status = "waiting";
+            race.roundEndTime = getNextRoundStartTime();
+        }
+
+        await race.save();
     } catch (error) {
         throw error;
     }

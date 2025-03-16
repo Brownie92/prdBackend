@@ -5,6 +5,14 @@ import { getRoundsByRace } from "../services/roundService.js";
 import { calculateProgressAndBoost } from "../utils/raceUtils.js";
 import { saveWinner } from "../controllers/winnerController.js";
 import { sendRaceUpdate, sendWinnerUpdate, sendRaceClosed } from "../socket.js";
+import Participant from "../models/Participant.js";
+import { DateTime } from "luxon";
+
+const getNextRoundStartTime = () => {
+    const now = DateTime.now().setZone("Europe/Amsterdam");
+    const nextRoundStart = now.set({ hour: 5, minute: 0, second: 0, millisecond: 0 });
+    return nextRoundStart < now ? nextRoundStart.plus({ days: 1 }) : nextRoundStart;
+};
 
 /**
  * ✅ Retrieve all rounds for a specific race
@@ -28,21 +36,41 @@ export const processRound = async (race) => {
             return { message: "Race is closed. No further rounds can be processed." };
         }
 
-        // console.log(`🟢 Processing Round ${race.currentRound} for Race ${race.raceId}`);
+        // ✅ 1️⃣ Check if Round 1 has enough participants and wait for 05:00 AM
+        if (race.currentRound === 1) {
+            const participantCount = await Participant.countDocuments({ raceId: race.raceId });
 
-        // ✅ 1️⃣ Retrieve all boosts for this round
+            if (participantCount < 100) {
+                console.log(`[INFO] 🛑 Not enough participants (${participantCount}/1). Race remains open.`);
+                race.roundEndTime = getNextRoundStartTime().toJSDate(); // Extend round 1 to next 05:00 AM
+                await race.save();
+                sendRaceUpdate(race);
+                return { race, message: "Not enough participants. Round 1 extended." };
+            }
+
+            const now = new Date();
+            if (now < race.roundEndTime) {
+                console.log(`[INFO] ⏳ Waiting for Round 1 to reach 05:00 AM CET.`);
+                return { race, message: "Waiting for Round 1 end time." };
+            }
+
+            // ✅ Update race status from "waiting" to "active"
+            race.status = "active";
+            await race.save();
+            sendRaceUpdate(race);
+        }
+
+        // ✅ 2️⃣ Retrieve all boosts for this round
         const boostSummary = await Boost.aggregate([
             { $match: { raceId: race.raceId, round: race.currentRound } },
             { $group: { _id: "$memeId", totalSol: { $sum: "$amountSOL" } } },
             { $sort: { totalSol: -1 } }
         ]);
 
-        // console.log(`[DEBUG] 🔍 Boost summary for Race ${race.raceId} Round ${race.currentRound}:`, boostSummary);
-
-        // ✅ 2️⃣ Calculate progress and boosts
+        // ✅ 3️⃣ Calculate progress and boosts
         const { updatedMemes, roundLog } = await calculateProgressAndBoost(race.memes, boostSummary);
 
-        // ✅ 3️⃣ Save the round in the database (base progress and boost progress separately)
+        // ✅ 4️⃣ Save the round in the database
         const newRound = new Round({
             raceId: race.raceId,
             roundNumber: race.currentRound,
@@ -58,8 +86,8 @@ export const processRound = async (race) => {
             winner: roundLog.winner
         });
         await newRound.save();
-        // console.log(`[DEBUG] ✅ Boosts correct opgeslagen in Round:`, newRound.progress);
 
+        // ✅ 5️⃣ Update progress in the race collection
         const progressData = await Round.aggregate([
             { $match: { raceId: race.raceId } },
             { $unwind: "$progress" },
@@ -67,44 +95,35 @@ export const processRound = async (race) => {
                 $group: { 
                     _id: "$progress.memeId",
                     baseProgress: { $sum: "$progress.progress" },  
-                    boostProgress: { $sum: "$progress.boostAmount" }  // ✅ Now it works correctly!
+                    boostProgress: { $sum: "$progress.boostAmount" }
                 }
             }
         ]);
-        
-        // console.log(`[DEBUG] ✅ Total progress per meme from Round collection:`, progressData);
 
-        // ✅ 5️⃣ Update progress in the 'Race' collection
         race.memes = race.memes.map(meme => {
             const progressInfo = progressData.find(p => p._id?.toString() === meme.memeId?.toString()) || { baseProgress: 0, boostProgress: 0 };
             return {
                 ...meme,
-                progress: progressInfo.baseProgress + progressInfo.boostProgress  // ✅ Save correct total progress
+                progress: progressInfo.baseProgress + progressInfo.boostProgress
             };
         });
         
         await race.save();
-        // console.log(`[DEBUG] ✅ Updated race progress:`, race.memes);
 
         // ✅ 6️⃣ Proceed to the next round or close the race
         if (race.currentRound < 6) {
             race.currentRound += 1;
-            race.roundEndTime = new Date(Date.now() + 3 * 60 * 1000);
+            race.roundEndTime = new Date(race.roundEndTime.getTime() + 3 * 60 * 60 * 1000); // Add 3 hours
         } else {
             race.status = "closed";
             await race.save();
-            
-            // console.log("[DEBUG] ✅ Race status updated to closed:", race); // ✅ Log for debugging
-            
-            sendRaceClosed(race); // ✅ Send WebSocket event that race is closed
-            
+            sendRaceClosed(race);
             try {
                 await saveWinner(race.raceId);
                 sendWinnerUpdate(race.raceId);
             } catch (winnerError) {
                 console.error("[ERROR] ❌ Error saving winner:", winnerError);
             }
-            
             return { race, newRound };
         }
 

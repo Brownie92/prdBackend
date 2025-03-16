@@ -58,7 +58,7 @@ export const getRace = async (req, res) => {
  */
 export const getCurrentRace = async (req, res) => {
     try {
-        const latestRace = await Race.findOne({ status: "active" }).sort({ createdAt: -1 });
+        const latestRace = await Race.findOne({ status: { $in: ["active", "waiting"] } }).sort({ createdAt: -1 });
 
         if (!latestRace) {
             return res.status(404).json({ message: "No active race found" });

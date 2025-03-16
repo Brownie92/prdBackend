@@ -49,7 +49,7 @@ export const getVaultByRace = async (req, res) => {
  */
 export const getLatestActiveVault = async (req, res) => {
     try {
-        const latestActiveRace = await Race.findOne({ status: "active" }).sort({ createdAt: -1 });
+        const latestActiveRace = await Race.findOne({ status: { $in: ["active", "waiting"] } }).sort({ createdAt: -1 });
 
         if (!latestActiveRace) {
             return res.status(404).json({ message: "No active race found." });

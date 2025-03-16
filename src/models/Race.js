@@ -12,7 +12,7 @@ const raceSchema = new mongoose.Schema({
     ],
     currentRound: { type: Number, default: 1 },
     roundEndTime: { type: Date, required: true },
-    status: { type: String, enum: ["active", "closed"], default: "active" },
+    status: { type: String, enum: ["waiting", "active", "closed"], default: "waiting" },
 }, { timestamps: true });
 
 export default mongoose.model("Race", raceSchema);

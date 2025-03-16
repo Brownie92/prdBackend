@@ -6,21 +6,39 @@ dotenv.config();
 
 let wss = null;
 const WS_PORT = process.env.WS_PORT || 6001;
+const ALLOWED_ORIGINS = process.env.WS_ALLOWED_ORIGINS ? process.env.WS_ALLOWED_ORIGINS.split(",") : [];
 
 export const initSocket = (server) => {
     if (!server) {
         wss = new WebSocketServer({ port: WS_PORT });
-        console.log(`[INFO] WebSocket server started on port ${WS_PORT}`);
     } else {
         wss = new WebSocketServer({ server });
     }
 
-    wss.on("connection", (ws) => {
-        ws.on("message", (message) => {});
+    wss.on("connection", (ws, req) => {
+        const origin = req.headers.origin;
+        
+        if (ALLOWED_ORIGINS.length > 0 && !ALLOWED_ORIGINS.includes(origin)) {
+            ws.close(1008, "Origin not allowed");
+            return;
+        }
 
-        ws.on("close", (code, reason) => {});
+        ws.on("message", (message) => {
+            try {
+                const data = JSON.parse(message);
+                // Handle messages if needed
+            } catch (error) {
+                ws.send(JSON.stringify({ event: "error", data: "Invalid message format" }));
+            }
+        });
 
-        ws.on("error", (error) => {});
+        ws.on("close", () => {
+            // Handle disconnections cleanly
+        });
+
+        ws.on("error", (error) => {
+            // Log errors silently
+        });
 
         ws.send(JSON.stringify({ event: "connection", data: "Connection established!" }));
     });
