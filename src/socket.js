@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 let wss = null;
-const WS_PORT = process.env.WS_PORT || 6001;
+const WS_PORT = process.env.WS_PORT || 6002;
 const ALLOWED_ORIGINS = process.env.WS_ALLOWED_ORIGINS ? process.env.WS_ALLOWED_ORIGINS.split(",") : [];
 
 export const initSocket = (server) => {
